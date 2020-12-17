@@ -15,6 +15,16 @@
     <?php include("head.html"); ?>
 
     <title>🔒 Twitter</title>
+	
+<style>
+#pwdescription{
+	display:none
+}
+
+#pwbox:focus-within + #pwdescription{
+	display:block;
+}
+</style>
 </head>
 <body class="bg-light" style="margin:1rem calc((100vw - 300px)/2);width:300px;">
 <h3 class="mb-5 text-center">
@@ -30,41 +40,52 @@
                 session_destroy();
                 exit;
             }
-            if ($_POST['username'] != "" && $_POST['password'] != "" && $_POST['confirm-password'] != "") {
-                if ($_POST['password'] == $_POST['confirm-password']) {
-                    include 'connect.php';
-                    $username = htmlentities(strtolower($_POST['username']));
-                    
-                    $stmt=$pdo->prepare("SELECT username FROM users WHERE username=:userName");
-                    $stmt->bindParam(':userName', $username);
-                    $stmt->execute();
-                    $stmt->fetch();
-                    $nrows1 = $stmt->rowCount();
-                    
-                    if (!($nrows1 >= 1)) {
-                        $password = htmlentities(hash('sha256', $_POST['password']));
-                        include 'connect.php';
-                        $sth = $pdo->prepare("INSERT INTO users(username, password) VALUES (:userName, :passw)");
-                        $sth->bindParam(':userName', $username);
-                        $sth->bindParam(':passw', $password);
-                        $sth->execute();
-                        echo "<div class='alert alert-success'>Your account has been created!</div>";
-                        echo "<a href='.' style='width:300px;' class='btn btn-info'>Go Home</a>";
-                        echo "</form>";
-                        echo "<br>";
-                        echo "</body>";
-                        echo "</html>";
-                        exit;
+			
+			// Validate password strength
+			$uppercase = preg_match('@[A-Z]@', $_POST['password']);
+			$lowercase = preg_match('@[a-z]@', $_POST['password']);
+			$number    = preg_match('@[0-9]@', $_POST['password']);
+			$specialChars = preg_match('@[^\w]@', $_POST['password']);
 
-                    } else {
-                        $error_msg = "Username already exists. Try using a different one!";
-                    }
-                } else {
-                    $error_msg = "Passwords did not match.";
-                }
-            } else {
-                $error_msg = "All fields must be filled!";
-            }
+			if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($_POST['password']) < 8) {
+				$error_msg = "Password is too weak!";
+			}else{
+				if ($_POST['username'] != "" && $_POST['password'] != "" && $_POST['confirm-password'] != "") {
+					if ($_POST['password'] == $_POST['confirm-password']) {
+						include 'connect.php';
+						$username = htmlentities(strtolower($_POST['username']));
+						
+						$stmt=$pdo->prepare("SELECT username FROM users WHERE username=:userName");
+						$stmt->bindParam(':userName', $username);
+						$stmt->execute();
+						$stmt->fetch();
+						$nrows1 = $stmt->rowCount();
+						
+						if (!($nrows1 >= 1)) {
+							$password = htmlentities(hash('sha256', $_POST['password']));
+							include 'connect.php';
+							$sth = $pdo->prepare("INSERT INTO users(username, password) VALUES (:userName, :passw)");
+							$sth->bindParam(':userName', $username);
+							$sth->bindParam(':passw', $password);
+							$sth->execute();
+							echo "<div class='alert alert-success'>Your account has been created!</div>";
+							echo "<a href='.' style='width:300px;' class='btn btn-info'>Go Home</a>";
+							echo "</form>";
+							echo "<br>";
+							echo "</body>";
+							echo "</html>";
+							exit;
+
+						} else {
+							$error_msg = "Username already exists. Try using a different one!";
+						}
+					} else {
+						$error_msg = "Passwords did not match.";
+					}
+				} else {
+					$error_msg = "All fields must be filled!";
+				}
+			}
         }
     ?>
     <h4>Create your account</h4>
@@ -77,9 +98,11 @@
                aria-describedby="basic-addon1"
                name="username" value="">
     </div>
+	<div id="pwbox">
     <input type="password" class="form-control mb-2" placeholder="Password" name="password">
-    <input type="password" class="form-control mb-2" placeholder="Confirm Password"
-           name="confirm-password">
+    <input type="password" class="form-control mb-2" placeholder="Confirm Password" name="confirm-password">
+	</div>
+	<label id="pwdescription" style="font-size:12px; color:grey;">Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character.</label>
     <?php
         if (isset($error_msg)) {
             echo "<div class='alert alert-danger'>" . $error_msg . "</div>";

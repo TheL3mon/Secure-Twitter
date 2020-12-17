@@ -1,4 +1,6 @@
-RewriteEngine On
+RewriteEngine On 
+RewriteCond %{HTTP_HOST} ^206\.189\.53\.81
+RewriteRule (.*) http://twitter.dedyn.io/$1 [R=301,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^hashtag/([A-Za-z0-9_]+)$ hashtag.php?hashtag=$1
